@@ -23,9 +23,9 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
-public class WasbBolt extends AbstractHdfsBolt {
+public class HdfsBolt extends AbstractHdfsBolt {
 	private static final long serialVersionUID = 1L;
-	private static final Logger LOG = LoggerFactory.getLogger(WasbBolt.class);
+	private static final Logger LOG = LoggerFactory.getLogger(HdfsBolt.class);
 
 	private transient FSDataOutputStream out;
 	private RecordFormat format;
@@ -37,27 +37,27 @@ public class WasbBolt extends AbstractHdfsBolt {
 
 	private static final long MAX_FAILURE_COUNT = 3;
 
-	public WasbBolt withRecordFormat(RecordFormat format) {
+	public HdfsBolt withRecordFormat(RecordFormat format) {
 		this.format = format;
 		return this;
 	}
 
-	public WasbBolt withFsUrl(String fsUrl) {
+	public HdfsBolt withFsUrl(String fsUrl) {
 		this.fsUrl = fsUrl;
 		return this;
 	}
 
-	public WasbBolt withRotationPolicy(FileRotationPolicy rotationPolicy) {
+	public HdfsBolt withRotationPolicy(FileRotationPolicy rotationPolicy) {
 		this.rotationPolicy = rotationPolicy;
 		return this;
 	}
 
-	public WasbBolt withSyncPolicy(SyncPolicy syncPolicy) {
+	public HdfsBolt withSyncPolicy(SyncPolicy syncPolicy) {
 		this.syncPolicy = syncPolicy;
 		return this;
 	}
 
-	public WasbBolt withFileNameFormat(FileNameFormat fileNameFormat) {
+	public HdfsBolt withFileNameFormat(FileNameFormat fileNameFormat) {
 		this.fileNameFormat = fileNameFormat;
 		return this;
 	}

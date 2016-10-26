@@ -1,7 +1,7 @@
 package org.apache.storm.hdfs;
 import org.apache.storm.hdfs.bolt.HdfsBolt;
 import org.apache.storm.hdfs.bolt.HourlyFileNameFormat;
-import org.apache.storm.hdfs.bolt.WasbBolt;
+import org.apache.storm.hdfs.bolt.HdfsBolt;
 import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
 import org.apache.storm.hdfs.bolt.format.DelimitedRecordFormat;
 import org.apache.storm.hdfs.bolt.format.FileNameFormat;
@@ -18,9 +18,9 @@ import backtype.storm.topology.TopologyBuilder;
 import com.beust.jcommander.*;
 
 
-public class WriteBufferTopology {
+public class WriteTopology {
 
-	private static final Logger LOG = LoggerFactory.getLogger(WriteBufferTopology.class);
+	private static final Logger LOG = LoggerFactory.getLogger(WriteTopology.class);
 
 	//Input Parameters
 	@Parameter(names={"-workers","-w"}, description="Number of Worker Processes")
@@ -71,7 +71,7 @@ public class WriteBufferTopology {
 	public static void main(String[] args) throws Exception
 	{
 		// Parse Input parameters
-		WriteBufferTopology writeBufferTopology = new WriteBufferTopology();
+		WriteTopology writeBufferTopology = new WriteTopology();
 		JCommander cmdLineParser = new JCommander(writeBufferTopology,args);
 
 		System.out.println("Using: ");
@@ -93,7 +93,7 @@ public class WriteBufferTopology {
 
 		// Build Topology
 		TopologyBuilder builder = new TopologyBuilder();
-		TestSpout randomSeqSpout = new TestSpout(recordSize, numRecords, topologyName, spoutParallelism/workers);
+		RandomSequenceSpout randomSeqSpout = new RandomSequenceSpout(recordSize, numRecords, topologyName, spoutParallelism/workers);
 
 		builder.setSpout("testgenerator", randomSeqSpout, spoutParallelism)
 				.setNumTasks(numTasksSpout);
@@ -101,7 +101,7 @@ public class WriteBufferTopology {
 		FileNameFormat fileNameFormat2 = new HourlyFileNameFormat()
 				.withPath(storageFileDirPath);
 
-		WasbBolt wasbBolt = new WasbBolt()
+		HdfsBolt hsfsBolt = new HdfsBolt()
 				.withRecordFormat(
 						new DelimitedRecordFormat().withFieldDelimiter(","))
 				.withFsUrl(storageUrl)
@@ -109,7 +109,7 @@ public class WriteBufferTopology {
 				.withSyncPolicy(new SizeSyncPolicy(fileBufferSize, sizeSyncPolicyEnabled))
 				.withFileNameFormat(fileNameFormat2);
 
-		builder.setBolt("hdfsBolt", wasbBolt, boltParallelism)
+		builder.setBolt("hdfsBolt", hsfsBolt, boltParallelism)
 				.setNumTasks(numTasksBolt)
 				.localOrShuffleGrouping("testgenerator");
 

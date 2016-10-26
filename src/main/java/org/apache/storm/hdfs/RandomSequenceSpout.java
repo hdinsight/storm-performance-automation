@@ -21,6 +21,7 @@ import java.util.Calendar;
 import java.io.PrintWriter;
 import java.util.UUID;
 import java.io.File;
+import java.io.BufferedWriter;
 import java.lang.StringBuilder;
 import java.util.Random;
 import org.apache.commons.lang.StringUtils;
@@ -31,7 +32,7 @@ import java.io.UnsupportedEncodingException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
-public class TestSpout extends BaseRichSpout {
+public class RandomSequenceSpout extends BaseRichSpout {
 
 	private static final long serialVersionUID = 1L;
 	SpoutOutputCollector _collector;
@@ -46,23 +47,16 @@ public class TestSpout extends BaseRichSpout {
 	String alphaNum = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	List<Object> currentTuple;
 	String topologyName;
+	long startTime;
+	File resultsFile;
 
-	//Configuration conf;
-	//Path p;
-	//ZookeeperDataStore zk;
-
-	public TestSpout(int sizeInBytes, int maxCount, String topologyName, int spoutParallelism) {
+	public RandomSequenceSpout(int sizeInBytes, int maxCount, String topologyName, int spoutParallelism) {
 		this.topologyName = topologyName;
 		this.spoutParallelism = spoutParallelism;
 		this.maxCount = maxCount;
-		length = sizeInBytes;
-
-		// For Zookeeper access
-		//conf = new Configuration();
-		//p = new Path("/etc/hadoop/conf/core-site.xml");
-		//conf.addResource(p);
-		//String zkConnStr = conf.get("ha.zookeeper.quorum");
-		//zk = new ZookeeperDataStore(zkConnStr);
+		this.startTime = System.currentTimeMillis();
+		this.length = sizeInBytes;
+		this.resultsFile = new File("/tmp/" + topologyName + ".txt");
 	}
 
 	@Override
@@ -82,9 +76,54 @@ public class TestSpout extends BaseRichSpout {
 			_collector.emit(currentTuple, id);
 			currCount++;
 			seqId++;
+
+			if (currCount % (maxCount/10) == 0)
+			{
+				long elapsedTime = System.currentTimeMillis() - this.startTime;
+				String timeStamp = new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime());
+				try
+				{
+					if(!this.resultsFile.exists())
+					{
+						this.resultsFile.createNewFile();
+					}
+
+					FileWriter fw = new FileWriter(this.resultsFile.getAbsoluteFile(), true);
+					BufferedWriter bw = new BufferedWriter(fw);
+				    bw.write(timeStamp + "," + currCount + "," + Long.toString(elapsedTime) + "\n"); 
+				    bw.close();
+				}
+				catch(IOException ioe)
+				{
+				    System.err.println("IOException: " + ioe.getMessage());
+				}
+			}
 		}
 		else
 		{
+
+			try 
+			{
+    			Thread.sleep(30000);
+			} catch(InterruptedException ex) 
+			{
+    			Thread.currentThread().interrupt();
+			}
+
+			try
+			{
+				Map conf = Utils.readStormConfig();
+				Client client = NimbusClient.getConfiguredClient(conf).getClient();
+				client.killTopology(topologyName);
+			}
+			catch(NotAliveException e)
+			{
+
+			}
+			catch(TException e)
+			{
+				
+			}
 
 		}
 	}
