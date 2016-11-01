@@ -11,11 +11,12 @@ import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SizeSyncPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
 import backtype.storm.topology.TopologyBuilder;
 import com.beust.jcommander.*;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.conf.Configuration;
 
 
 public class WriteTopology {
@@ -91,9 +92,17 @@ public class WriteTopology {
 		System.out.println("Storage File container: " + storageFileDirPath);
 		System.out.println("Size Sync Policy Enabled: " + sizeSyncPolicyEnabled);
 
+		// Getting Zookeeper connection string
+
+		Configuration coresiteConfig = new Configuration();
+    	Path p = new Path("/etc/hadoop/conf/core-site.xml");
+    	coresiteConfig.addResource(p);
+    	String zkConnStr = coresiteConfig.get("ha.zookeeper.quorum");
+    	System.out.println("Zookeeper Hosts (ha.zookeeper.quorum): " + zkConnStr);
+
 		// Build Topology
 		TopologyBuilder builder = new TopologyBuilder();
-		RandomSequenceSpout randomSeqSpout = new RandomSequenceSpout(recordSize, numRecords, topologyName, spoutParallelism/workers);
+		RandomSequenceSpout randomSeqSpout = new RandomSequenceSpout(recordSize, numRecords, topologyName, spoutParallelism, zkConnStr);
 
 		builder.setSpout("testgenerator", randomSeqSpout, spoutParallelism)
 				.setNumTasks(numTasksSpout);

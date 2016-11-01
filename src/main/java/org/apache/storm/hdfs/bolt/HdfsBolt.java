@@ -91,9 +91,10 @@ public class HdfsBolt extends AbstractHdfsBolt {
 				}
 			}
 
-			// This can cause data loss if fs.azure.write.request.size is set to default value.
-			// In this case, WASB driver will buffer up to 4 MB before flushing. If the bolt thread dies in between,
-			// we have data loss.
+			// ACKing can be done here or when file is rolled over. 
+			// This depends on the value of fs.azure.write.request.size (which controls the size of the flush buffer)
+			// If set to default value, WASB driver will buffer up to 4 MB before flushing/writing to storage. 
+			// If each tuple is important, it is recommended to ACK only when the file is rolled over. 
 			this.collector.ack(tuple);
 
 		} catch (IOException e) {
@@ -139,7 +140,7 @@ public class HdfsBolt extends AbstractHdfsBolt {
 	protected Path createOutputFile() throws IOException {
 		Path filePath = new Path(this.fileNameFormat.getPath(),
 				this.fileNameFormat.getName(this.rotation, System.currentTimeMillis()));
-		//LOG.info("Using output file: " + filePath.getName());
+		LOG.info("Using output file: " + filePath.getName());
 		this.out = this.fs.create(filePath);
 		return filePath;
 	}

@@ -50,9 +50,7 @@ import java.util.TimeZone;
  *
  */
 public class HourlyFileNameFormat implements FileNameFormat {
-    /**
-	 * `
-	 */
+
 	private static final long serialVersionUID = -629169447311923341L;
 	
 	private String componentId;
@@ -61,23 +59,11 @@ public class HourlyFileNameFormat implements FileNameFormat {
     private String prefix = "";
     private String extension = ".txt";
 
-    /**
-     * Overrides the default prefix.
-     *
-     * @param prefix
-     * @return
-     */
     public HourlyFileNameFormat withPrefix(String prefix){
         this.prefix = prefix;
         return this;
     }
 
-    /**
-     * Overrides the default file extension.
-     *
-     * @param extension
-     * @return
-     */
     public HourlyFileNameFormat withExtension(String extension){
         this.extension = extension;
         return this;
