@@ -3,6 +3,7 @@ package org.apache.storm.hdfs;
 import java.lang.String;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -11,9 +12,12 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.RetryPolicy;
+import org.apache.storm.shade.com.google.common.primitives.Longs;
 import org.apache.zookeeper.CreateMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.io.ByteArrayInputStream;
+import java.io.ObjectInputStream;
 
 public class ZookeeperClient {
 
@@ -25,7 +29,7 @@ public class ZookeeperClient {
 	String zkConnStr;
     InterProcessSemaphoreMutex lock;
 
-	public ZookeeperClient(String zkConnStr) 
+	public ZookeeperClient(String zkConnStr)
 	{
 		this.zkConnStr = zkConnStr;
 		this.zkCounterPath = "/stormsyncpath";
@@ -44,6 +48,45 @@ public class ZookeeperClient {
         this.client = CuratorFrameworkFactory.newClient(this.zkConnStr, this.retryPolicy);
         this.client.start();
 	}
+
+    public boolean updatespoutstatistics(Long elapsedtimeinmillis, String path)
+    {
+        boolean updateSuccess = false;
+        try
+        {
+            System.out.println("elapsedtimeinmillis"+elapsedtimeinmillis);
+            if(client.checkExists().forPath(path) == null)
+            {
+                this.client.create().withMode(CreateMode.PERSISTENT).forPath(path, Longs.toByteArray(elapsedtimeinmillis));
+                updateSuccess = true;
+            }
+            this.client.setData().forPath(path, valueToBytes(elapsedtimeinmillis));
+        }
+        catch(Exception e)
+        {
+            log("Exception encountered :" + e.getMessage());
+        }
+        return updateSuccess;
+    }
+
+    public boolean updatespoutstatistics(byte[] input_data, String path)
+    {
+        boolean updateSuccess = false;
+        try
+        {
+            if(client.checkExists().forPath(path) == null)
+            {
+                this.client.create().withMode(CreateMode.PERSISTENT).forPath(path, input_data);
+                updateSuccess = true;
+            }
+            this.client.setData().forPath(path, input_data);
+        }
+        catch(Exception e)
+        {
+            log("Exception encountered :" + e.getMessage());
+        }
+        return updateSuccess;
+    }
 
     public boolean updatedSharedWorkProgressCounter()
     {       
@@ -89,6 +132,30 @@ public class ZookeeperClient {
         try
         {
             return bytesToValue(this.client.getData().forPath(this.zkCounterPath));
+        }
+        catch (Exception e)
+        {
+            log("Exception encountered while retrieving data from Zookeeper: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public Long getData(String Path){
+        try{
+            return bytesToValue(this.client.getData().forPath(Path));
+        }
+        catch (Exception e)
+        {
+            log("Exception encountered while retrieving data from Zookeeper: " + e.getMessage());
+            return null;
+        }
+    }
+    public Map<Long,Long> getdata(String Path){
+        try{
+            ByteArrayInputStream data = new ByteArrayInputStream(this.client.getData().forPath(Path));
+            ObjectInputStream in = new ObjectInputStream(data);
+            Map<Long, Long> ackstats = (Map<Long, Long>) in.readObject();
+            return ackstats;
         }
         catch (Exception e)
         {

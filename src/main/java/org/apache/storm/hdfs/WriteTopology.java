@@ -1,22 +1,22 @@
 package org.apache.storm.hdfs;
-import org.apache.storm.hdfs.bolt.HdfsBolt;
+
+import org.apache.storm.Config;
+import org.apache.storm.StormSubmitter;
+import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
+import org.apache.storm.topology.TopologyBuilder;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.storm.hdfs.bolt.*;
 import org.apache.storm.hdfs.bolt.HourlyFileNameFormat;
-import org.apache.storm.hdfs.bolt.HdfsBolt;
-import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
 import org.apache.storm.hdfs.bolt.format.DelimitedRecordFormat;
 import org.apache.storm.hdfs.bolt.format.FileNameFormat;
 import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy.Units;
-import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SizeSyncPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import backtype.storm.Config;
-import backtype.storm.StormSubmitter;
-import backtype.storm.topology.TopologyBuilder;
-import com.beust.jcommander.*;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.conf.Configuration;
 
 
 public class WriteTopology {

@@ -1,38 +1,22 @@
 package org.apache.storm.hdfs;
 
-import backtype.storm.spout.SpoutOutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichSpout;
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Values;
-import backtype.storm.generated.KillOptions;
-import backtype.storm.generated.Nimbus.Client;
-import backtype.storm.utils.NimbusClient;
-import backtype.storm.generated.NotAliveException;
-import backtype.storm.utils.Utils;
-import java.util.List;
-import java.io.FileWriter;
-import java.lang.String;
-import java.util.Map;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.io.PrintWriter;
-import java.util.UUID;
-import java.util.concurrent.*;
-import java.io.File;
-import java.io.BufferedWriter;
-import java.lang.StringBuilder;
-import java.util.Random;
-import org.apache.commons.lang.StringUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import java.io.UnsupportedEncodingException;
-import org.apache.thrift7.TException;
-import java.nio.ByteBuffer;
+import org.apache.commons.lang.SerializationUtils;
+import org.apache.storm.generated.Nimbus.Client;
+import org.apache.storm.generated.NotAliveException;
+import org.apache.storm.spout.SpoutOutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichSpout;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 
 public class RandomSequenceSpout extends BaseRichSpout {
@@ -41,6 +25,7 @@ public class RandomSequenceSpout extends BaseRichSpout {
 	private static final Logger LOG = LoggerFactory.getLogger(RandomSequenceSpout.class);
 	SpoutOutputCollector _collector;
 	long maxCount;
+	long ackmessages = 0;
 	boolean currentThreadMarkedComplete = false;
 	long spoutThreads = 0;
 	long currCount = 0;
@@ -54,6 +39,7 @@ public class RandomSequenceSpout extends BaseRichSpout {
 	String topologyName;
 	File resultsFile;
 	boolean spoutThreadComplete = false;
+    Map<Long,Long> ackstats=null;
 	public static ZookeeperClient zkClient;
 
 	public RandomSequenceSpout(int sizeInBytes, int maxCount, String topologyName, long spoutThreads, String zkConnStr) 
@@ -64,11 +50,34 @@ public class RandomSequenceSpout extends BaseRichSpout {
 		this.length = sizeInBytes;
 		this.zookeeperConnString = zkConnStr;
 		this.topologyName = topologyName;
-		this.resultsFile = new File("/tmp/" + topologyName + ".txt");		
+		this.resultsFile = new File("/tmp/" + topologyName + ".txt");
 	}
 
 	@Override
 	public void ack(Object id) {
+		this.ackmessages++;
+		if(this.ackstats == null){
+			this.ackstats = new HashMap<Long, Long>();
+		}
+		if(this.ackmessages % (maxCount/10)==0){
+			this.ackstats.put(this.ackmessages,System.currentTimeMillis() - this.startTime);
+		}
+
+		if(this.ackmessages == maxCount){
+			if(this.zkClient == null){
+				this.zkClient = new ZookeeperClient(zookeeperConnString);
+			}
+			ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+			try {
+				ObjectOutputStream out = new ObjectOutputStream(byteOut);
+				out.writeObject(this.ackstats);
+			}catch (Exception e){
+				log("Exception encountered during serialization" + e.getMessage());
+				throw new RuntimeException(e.getMessage());
+			}
+
+			this.zkClient.updatespoutstatistics(byteOut.toByteArray(),"/"+Thread.currentThread().getId());
+		}
 	}
 
 	@Override
@@ -206,7 +215,7 @@ public class RandomSequenceSpout extends BaseRichSpout {
 		{
 			log("NotAliveException: " + e.getMessage());
 		}
-		catch(TException e)
+		catch(Exception e)
 		{	
 			log("TException: " + e.getMessage());	
 		}
