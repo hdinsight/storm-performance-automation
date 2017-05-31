@@ -18,7 +18,7 @@
 package org.apache.storm.hdfs.bolt;
 
 import org.apache.storm.hdfs.bolt.format.FileNameFormat;
-import backtype.storm.task.TopologyContext;
+import org.apache.storm.task.TopologyContext;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -73,7 +73,7 @@ public class HourlyFileNameFormat implements FileNameFormat {
         this.path = path;
         return this;
     }
-    
+
     public void prepare(Map conf, TopologyContext topologyContext) {
         this.componentId = topologyContext.getThisComponentId();
         this.taskId = topologyContext.getThisTaskId();

@@ -6,9 +6,8 @@ This suite contains tools to run performance experiments on WASB and ADLS using 
 ## Prequisites/Setup
 1. Create a HDInsight cluster of desired size.
 2. Fork and clone this repository so you have a local copy.
-3. Install the following jar from the /lib directory of this repo to your local maven repository:
-   
-   ```mvn -q install:install-file -Dfile=lib/eventhubs-storm-spout-0.9.4-jar-with-dependencies.jar -DgroupId=com.microsoft.eventhubs -DartifactId=eventhubs-storm-spout -Dversion=0.9.4 -Dpackaging=jar```
+3. Install eventhub jars from the following location:
+   https://github.com/hdinsight/hdinsight-storm-examples/tree/master/HDI3.5/protonjeventhub
 4. Build from root folder: ```mvn clean package```
 
 ## Usage
@@ -59,3 +58,28 @@ storm jar target/org.apache.storm.hdfs.writebuffertest-0.1.jar org.apache.storm.
 
 ## Analyzing Results
 Results for run are stored under ```/tmp``` folder on the worker nodes. The name of the the file is the name of the topology specified in the input arguments.
+
+## EeventHub Tests example:
+Writing to eventhub
+```
+storm jar org.apache.storm.hdfs.writebuffertest-0.1.jar org.apache.storm.hdfs.EventHubWriter -workers 4
+ -recordSize 100 -spoutParallelism 2 -numTasksSpout 2 -numAckers 2 -boltParallelism 2 -numTasksBolt 2
+ -numRecords 2000 -maxSpoutPending 1000 -topologyName EventWriter1 -eventhubs.writerpolicyname $writer
+ -eventhubs.writerpolicykey $writerkey -eventhubs.namespace $namespace -eventhubs.entitypath $entitypath
+  ```
+Reading from eventhub
+```
+storm jar org.apache.storm.hdfs.writebuffertest-0.1.jar org.apache.storm.hdfs.EventHubReader -workers 4
+-recordSize 100 -spoutParallelism 2 -numTasksSpout 2 -numAckers 2 -boltParallelism 2 -numTasksBolt 2
+-numRecords 1000 -maxSpoutPending 1500 -topologyName EventReader4 -storageUrl "wasb:///"
+-storageFileDirPath /eventreader4/ -fileRotationSize 100 -eventhubs.readerpolicyname $reader
+-eventhubs.readerpolicykey $readerkey -eventhubs.namespace $namespace -eventhubs.entitypath $entitypath
+-eventhubs.partitions.count 2 -eventhubs.checkpoint.interval 10 -eventhubs.receiver.credits 1
+```
+
+## Analyzing EventHub Results
+Every spout will have a zknode created where regular intervals of 10th percentile of acked messages are
+written to zookeeper with the elapsed time. To read the zookeeper information run
+```
+java -cp org.apache.storm.hdfs.writebuffertest-0.1.jar result.aggregation.ReadResults $zknode
+```

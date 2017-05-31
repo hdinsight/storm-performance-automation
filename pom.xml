@@ -4,6 +4,42 @@
 	<groupId>org.apache.storm.hdfs</groupId>
 	<artifactId>org.apache.storm.hdfs.writebuffertest</artifactId>
 	<version>0.1</version>
+
+	<repositories>
+		<repository>
+			<releases>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+				<checksumPolicy>warn</checksumPolicy>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+				<updatePolicy>never</updatePolicy>
+				<checksumPolicy>fail</checksumPolicy>
+			</snapshots>
+			<id>HDPReleases</id>
+			<name>HDP Releases</name>
+			<url>http://repo.hortonworks.com/content/repositories/releases/</url>
+			<layout>default</layout>
+		</repository>
+		<repository>
+			<releases>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+				<checksumPolicy>warn</checksumPolicy>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+				<updatePolicy>never</updatePolicy>
+				<checksumPolicy>fail</checksumPolicy>
+			</snapshots>
+			<id>HDPJetty</id>
+			<name>Hadoop Jetty</name>
+			<url>http://repo.hortonworks.com/content/repositories/jetty-hadoop/</url>
+			<layout>default</layout>
+		</repository>
+	</repositories>
+
 	<build>
 		<plugins>
 			<plugin>
@@ -54,8 +90,8 @@
 		</plugins>
 	</build>
 	<properties>
-		<HadoopVersion>2.7.2</HadoopVersion>
-		<StormVersion>0.9.3</StormVersion>
+		<HadoopVersion>2.7.3</HadoopVersion>
+		<StormVersion>1.0.1.2.5.3.0-37</StormVersion>
 	</properties>
 	<dependencies>
 		<!-- https://mvnrepository.com/artifact/commons-cli/commons-cli -->
@@ -94,9 +130,9 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>com.microsoft.eventhubs</groupId>
-			<artifactId>eventhubs-storm-spout</artifactId>
-			<version>0.9.4</version>
+			<groupId>org.apache.storm</groupId>
+			<artifactId>storm-eventhubs</artifactId>
+			<version>2.0.0-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.slf4j</groupId>
@@ -137,7 +173,7 @@
 					<artifactId>hadoop-hdfs</artifactId>
 				</exclusion>
 			</exclusions>
-			<version>0.9.3</version>
+			<version>1.0.1.2.5.3.72-3</version>
 		</dependency>
 		<!-- This is a temporary workaround to make HdfsBolt work with WASB through
 			hadoop-azure project. For now, we have to build hadoop-client, hadoop-hdfs
